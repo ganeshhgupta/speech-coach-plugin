@@ -23,7 +23,7 @@ window.SC = window.SC || {};
         <button id="sc-start-btn" disabled>Start</button>
         <button id="sc-stop-btn" class="sc-stop" disabled>Stop</button>
       </div>
-      <div class="sc-score" id="sc-score"></div>
+      <div class="sc-score" id="sc-score"><div class="sc-empty">No answer analyzed yet.</div></div>
     `;
     document.documentElement.appendChild(root);
 
@@ -81,20 +81,59 @@ window.SC = window.SC || {};
     questionEl.textContent = text;
   }
 
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = String(s);
+    return d.innerHTML;
+  }
+
+  function metricRow(label, value, flagged) {
+    return `<div class="sc-metric-row${flagged ? " sc-metric-flag" : ""}">
+      <span>${esc(label)}</span><span class="sc-metric-val">${esc(value)}</span>
+    </div>`;
+  }
+
   // report: the plain analysis Report from /api/analyze (linguistics/pauses/
   // prosody/findings — no numeric score, /api/analyze doesn't compute one).
+  // Renders every measured field, not just a one-line summary.
   function setScore(report) {
     ensureMounted();
     if (!report) {
-      scoreEl.textContent = "";
+      scoreEl.innerHTML = `<div class="sc-empty">No answer analyzed yet.</div>`;
       return;
     }
-    const L = report.linguistics;
-    if (!L || L.word_count < 8 || L.speaking_time_sec < 3.0) {
-      scoreEl.textContent = "Last answer too short to measure.";
-      return;
+
+    const L = report.linguistics || {};
+    const P = report.pauses || {};
+    const Pr = report.prosody || {};
+    const enoughSpeech = (L.word_count || 0) >= 8 && (L.speaking_time_sec || 0) >= 3.0;
+
+    let html = "";
+    html += `<div class="sc-metrics-title">Delivery metrics</div>`;
+
+    if (!enoughSpeech) {
+      html += `<div class="sc-empty">Only ${L.word_count ?? 0} word(s) over ${L.speaking_time_sec ?? 0}s — too little speech for pace/pitch metrics.</div>`;
+    } else {
+      html += metricRow("Pace", `${L.wpm} wpm`, L.wpm < 110 || L.wpm > 170);
+      html += metricRow("Pitch variation (CV)", Pr.pitch_cv ?? "n/a");
     }
-    scoreEl.innerHTML = `Last answer: <b>${L.wpm} wpm</b>, ${L.filler_count} filler word(s)`;
+    html += metricRow("Filler words", `${L.filler_rate_per_min ?? 0}/min (${L.filler_count ?? 0})`, (L.filler_rate_per_min ?? 0) > 3);
+    html += metricRow("Hedge words", `${L.hedge_rate_per_min ?? 0}/min (${L.hedge_count ?? 0})`, (L.hedge_rate_per_min ?? 0) > 3);
+    html += metricRow("Long pauses (>1.2s)", `${P.long_pause_count ?? 0}`, (P.long_pause_count ?? 0) > 0);
+    html += metricRow("Longest pause", `${P.longest_pause_sec ?? 0}s`);
+    html += metricRow("Speaking time", `${L.speaking_time_sec ?? 0}s`);
+    html += metricRow("Word count", `${L.word_count ?? 0}`);
+
+    if (report.findings && report.findings.length) {
+      html += `<div class="sc-findings-title">Findings</div>`;
+      for (const f of report.findings) {
+        html += `<div class="sc-finding sc-sev-${esc(f.severity)}">
+          <span class="sc-finding-cat">[${esc(f.severity)}] ${esc(f.category)}</span><br>${esc(f.message)}
+        </div>`;
+      }
+    }
+
+    scoreEl.innerHTML = html;
   }
 
   function setError(message) {

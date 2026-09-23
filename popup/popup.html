@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Speech Coach</title>
+<style>
+  body {
+    width: 260px; margin: 0; padding: 16px; background: #0f1115; color: #e6e8ee;
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  }
+  h1 { font-size: 15px; margin: 0 0 4px; }
+  .sub { color: #9aa2b1; font-size: 12px; margin-bottom: 14px; line-height: 1.5; }
+  .status { font-size: 12px; margin-bottom: 12px; }
+  .status.on { color: #34d399; }
+  .status.off { color: #9aa2b1; }
+  .status.unsupported { color: #f2b705; }
+  button {
+    width: 100%; background: #5b8def; color: #fff; border: none; border-radius: 6px;
+    padding: 10px; font-size: 13px; cursor: pointer;
+  }
+  button.off { background: #2a2f3a; }
+  button:disabled { opacity: .5; cursor: default; }
+  .hint { font-size: 11px; color: #9aa2b1; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <h1>Speech Coach Interview Plugin</h1>
+  <div class="sub">Start a voice-mode conversation on Claude.ai or ChatGPT, tell it to interview you, then activate here.</div>
+  <div class="status" id="status">Checking...</div>
+  <button id="toggleBtn" disabled>...</button>
+  <div class="hint">The overlay on the page always has manual Start/Stop recording buttons in case automatic detection misses a turn.</div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Speech Coach Interview Plugin",
+  "version": "0.1.0",
+  "description": "Practice interviews using Claude or ChatGPT voice mode; records your spoken answers, runs vocal-delivery analysis, and injects it back into the chat for a combined content + delivery review.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon48.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://claude.ai/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*",
+    "https://speech-coach-rsme.onrender.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": [
+        "content/platforms/claude.js",
+        "content/vad.js",
+        "content/recorder.js",
+        "content/analysis-client.js",
+        "content/injector.js",
+        "content/overlay.js",
+        "content/main.js"
+      ],
+      "css": ["content/overlay.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "js": [
+        "content/platforms/chatgpt.js",
+        "content/vad.js",
+        "content/recorder.js",
+        "content/analysis-client.js",
+        "content/injector.js",
+        "content/overlay.js",
+        "content/main.js"
+      ],
+      "css": ["content/overlay.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

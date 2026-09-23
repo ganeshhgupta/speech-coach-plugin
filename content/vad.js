@@ -13,7 +13,9 @@ window.SC = window.SC || {};
 (function () {
   const START_DEBOUNCE_SEC = 0.3;
   const STOP_SILENCE_SEC = 1.2;
-  const ENERGY_THRESHOLD = 0.02; // RMS, roughly-tuned for a typical laptop/phone mic
+  const CALIBRATION_SEC = 0.8; // sample ambient noise floor before arming speech detection
+  const MIN_THRESHOLD = 0.008; // floor so a dead-silent room doesn't arm on a whisper of noise
+  const THRESHOLD_MULTIPLIER = 3.5; // speech must be this many times louder than the measured noise floor
 
   class VAD {
     constructor(stream) {
@@ -31,6 +33,11 @@ window.SC = window.SC || {};
       this.rafId = null;
       this.onSpeechStart = null;
       this.onSpeechEnd = null;
+
+      this.threshold = MIN_THRESHOLD;
+      this.calibrating = false;
+      this.calibrationStart = null;
+      this.calibrationSamples = [];
     }
 
     _rms() {
@@ -44,7 +51,18 @@ window.SC = window.SC || {};
       const now = performance.now() / 1000;
       const energy = this._rms();
 
-      if (energy >= ENERGY_THRESHOLD) {
+      if (this.calibrating) {
+        this.calibrationSamples.push(energy);
+        if (now - this.calibrationStart >= CALIBRATION_SEC) {
+          const avg = this.calibrationSamples.reduce((a, b) => a + b, 0) / this.calibrationSamples.length;
+          this.threshold = Math.max(MIN_THRESHOLD, avg * THRESHOLD_MULTIPLIER);
+          this.calibrating = false;
+        }
+        this.rafId = requestAnimationFrame(() => this._tick());
+        return;
+      }
+
+      if (energy >= this.threshold) {
         this.belowSince = null;
         if (!this.speaking) {
           if (this.aboveSince == null) this.aboveSince = now;
@@ -73,6 +91,9 @@ window.SC = window.SC || {};
       this.speaking = false;
       this.aboveSince = null;
       this.belowSince = null;
+      this.calibrating = true;
+      this.calibrationStart = performance.now() / 1000;
+      this.calibrationSamples = [];
       this._tick();
     }
 

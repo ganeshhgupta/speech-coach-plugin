@@ -13,12 +13,21 @@
   let vad = null;
   let recorder = null;
   let stopWatchingMessages = null;
-  let busy = false; // true while recording or analyzing — ignore new questions until the loop settles
+  // phase: "idle" (armed, no question yet) | "listening" (question shown, VAD
+  // armed, waiting for the user to start talking) | "recording" | "analyzing".
+  // Each transition is gated by phase, not a single busy flag — onSpeechStart
+  // and onSpeechEnd need different gates (only fire in "listening" and
+  // "recording" respectively), which a single boolean can't express.
+  let phase = "idle";
 
   async function activate() {
     if (active) return;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // AGC constantly re-adjusts input gain, which makes a fixed VAD energy
+      // threshold unreliable; disable it so the mic's raw level is stable.
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false },
+      });
     } catch (e) {
       SC.overlay.ensureMounted();
       SC.overlay.setError("Microphone permission denied. Click the extension icon to try again.");
@@ -26,6 +35,7 @@
     }
 
     active = true;
+    phase = "idle";
     recorder = new SC.Recorder(stream);
     vad = new SC.VAD(stream);
 
@@ -37,25 +47,26 @@
     );
 
     vad.onSpeechStart = () => {
-      if (busy) return;
+      if (phase !== "listening") return;
       startRecording("vad");
     };
     vad.onSpeechEnd = () => {
-      if (busy) return;
+      if (phase !== "recording") return;
       stopRecordingAndReview("vad");
     };
 
     stopWatchingMessages = SC.activePlatform.onNewAssistantMessage((questionText) => {
-      if (busy) return;
+      if (phase !== "idle") return;
       SC.overlay.setQuestion(questionText);
       SC.overlay.setState("listening");
+      phase = "listening";
       vad.start();
     });
   }
 
   function deactivate() {
     active = false;
-    busy = false;
+    phase = "idle";
     if (stopWatchingMessages) stopWatchingMessages();
     stopWatchingMessages = null;
     if (vad) vad.close();
@@ -70,18 +81,20 @@
   }
 
   function startRecording(source) {
-    if (busy || !recorder || recorder.isRecording()) return;
-    busy = true;
-    if (vad) vad.stop();
+    if (!recorder || recorder.isRecording()) return;
+    phase = "recording";
+    // VAD keeps running through the recording — it's what detects the
+    // user going quiet again to auto-stop.
     recorder.start();
     SC.overlay.setState("recording");
   }
 
   async function stopRecordingAndReview(source) {
     if (!recorder || !recorder.isRecording()) {
-      busy = false;
+      phase = "idle";
       return;
     }
+    phase = "analyzing";
     SC.overlay.setState("analyzing");
     try {
       const { blob, ext } = await recorder.stop();
@@ -96,7 +109,7 @@
       SC.overlay.setError(e.message || "Something went wrong analyzing that answer.");
       SC.overlay.setState("armed");
     } finally {
-      busy = false;
+      phase = "idle";
       if (active && vad) vad.start();
     }
   }

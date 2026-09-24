@@ -42,14 +42,37 @@ No second AI model call happens in the extension itself — every review
 (per-question and the final session review) comes from whichever AI
 you're already talking to, driven by the injected measurements.
 
-## Install (unpacked, for now)
+## Install
 
-1. `chrome://extensions` → enable **Developer mode**.
-2. **Load unpacked** → select this folder.
-3. (Optional) Click the extension icon → expand "Interview settings" to
-   configure your CV/JD/silence-threshold/question types before starting.
-4. Open Claude.ai or ChatGPT, start a voice-mode conversation, click the
+Not on the Chrome Web Store — load it as an unpacked extension:
+
+1. Download the latest zip from
+   [Releases](https://github.com/ganeshhgupta/speech-coach-plugin/releases/latest)
+   (`speech-coach-plugin-vX.Y.Z.zip`) and unzip it anywhere.
+2. Go to `chrome://extensions` in Chrome and turn on **Developer mode**
+   (top-right toggle).
+3. Click **Load unpacked** and select the unzipped `speech-coach-plugin`
+   folder.
+4. The extension icon appears in your toolbar. Pin it for easy access.
+5. (Optional) Click the icon → expand "Interview settings" to configure
+   your CV/JD/silence-threshold/question types before starting.
+6. Open Claude.ai or ChatGPT, start a voice-mode conversation, click the
    extension icon and activate it for that tab.
+
+Updating later: download the new zip, unzip over the old folder (or a new
+one), then click the reload icon on the extension's card in
+`chrome://extensions`.
+
+<details>
+<summary>Installing from source instead</summary>
+
+```
+git clone https://github.com/ganeshhgupta/speech-coach-plugin.git
+```
+
+Then **Load unpacked** → select the cloned `speech-coach-plugin` folder.
+Useful if you want to track `main` instead of a tagged release.
+</details>
 
 ## Manual override
 

@@ -12,14 +12,17 @@ window.SC = window.SC || {};
 
 (function () {
   const START_DEBOUNCE_SEC = 0.3;
-  const STOP_SILENCE_SEC = 1.2;
+  const DEFAULT_STOP_SILENCE_SEC = 1.2;
   const CALIBRATION_SEC = 0.8; // sample ambient noise floor before arming speech detection
   const MIN_THRESHOLD = 0.008; // floor so a dead-silent room doesn't arm on a whisper of noise
   const THRESHOLD_MULTIPLIER = 3.5; // speech must be this many times louder than the measured noise floor
 
   class VAD {
-    constructor(stream) {
+    // opts.stopSilenceSec: seconds of silence that counts as "done answering"
+    // (the user-configurable "N" from the options page, clamped 1-10 there).
+    constructor(stream, opts) {
       this.stream = stream;
+      this.stopSilenceSec = (opts && opts.stopSilenceSec) || DEFAULT_STOP_SILENCE_SEC;
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 2048;
@@ -76,7 +79,7 @@ window.SC = window.SC || {};
         this.aboveSince = null;
         if (this.speaking) {
           if (this.belowSince == null) this.belowSince = now;
-          if (now - this.belowSince >= STOP_SILENCE_SEC) {
+          if (now - this.belowSince >= this.stopSilenceSec) {
             this.speaking = false;
             this.belowSince = null;
             if (this.onSpeechEnd) this.onSpeechEnd();
@@ -88,6 +91,7 @@ window.SC = window.SC || {};
     }
 
     start() {
+      this.stop(); // idempotent: cancel any already-running loop before starting a fresh one
       this.speaking = false;
       this.aboveSince = null;
       this.belowSince = null;

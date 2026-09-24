@@ -45,4 +45,8 @@ toggleBtn.addEventListener("click", async () => {
   render();
 });
 
+document.getElementById("settingsBtn").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});
+
 init();

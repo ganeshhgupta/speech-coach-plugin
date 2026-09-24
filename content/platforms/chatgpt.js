@@ -49,7 +49,10 @@ window.SC = window.SC || {};
   }
 
   function onNewAssistantMessage(callback) {
-    let lastSeenText = "";
+    // Seed with whatever's already the latest message so a benign DOM
+    // mutation right after setup can't replay a pre-existing message as "new".
+    const existing = getLatestAssistantMessageEl();
+    let lastSeenText = existing ? existing.innerText.trim() : "";
     let settleTimer = null;
 
     const observer = new MutationObserver(() => {

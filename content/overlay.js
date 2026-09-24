@@ -4,16 +4,17 @@ window.SC = window.SC || {};
 
 (function () {
   let root = null;
-  let dotEl, statusTextEl, questionEl, startBtn, stopBtn, scoreEl;
+  let dotEl, statusTextEl, turnCountEl, questionEl, startBtn, stopBtn, endBtn, scoreEl;
   let onManualStart = null;
   let onManualStop = null;
+  let onEndSession = null;
 
   function ensureMounted() {
     if (root) return;
     root = document.createElement("div");
     root.id = "sc-overlay";
     root.innerHTML = `
-      <h2>Speech Coach</h2>
+      <h2>Speech Coach <span id="sc-turn-count" style="float:right;"></span></h2>
       <div class="sc-status-row">
         <span class="sc-dot" id="sc-dot"></span>
         <span id="sc-status-text">Inactive</span>
@@ -23,19 +24,25 @@ window.SC = window.SC || {};
         <button id="sc-start-btn" disabled>Start</button>
         <button id="sc-stop-btn" class="sc-stop" disabled>Stop</button>
       </div>
+      <div class="sc-buttons">
+        <button id="sc-end-btn" class="sc-end">End Session &amp; Get Review</button>
+      </div>
       <div class="sc-score" id="sc-score"><div class="sc-empty">No answer analyzed yet.</div></div>
     `;
     document.documentElement.appendChild(root);
 
     dotEl = root.querySelector("#sc-dot");
     statusTextEl = root.querySelector("#sc-status-text");
+    turnCountEl = root.querySelector("#sc-turn-count");
     questionEl = root.querySelector("#sc-question");
     startBtn = root.querySelector("#sc-start-btn");
     stopBtn = root.querySelector("#sc-stop-btn");
+    endBtn = root.querySelector("#sc-end-btn");
     scoreEl = root.querySelector("#sc-score");
 
     startBtn.addEventListener("click", () => onManualStart && onManualStart());
     stopBtn.addEventListener("click", () => onManualStop && onManualStop());
+    endBtn.addEventListener("click", () => onEndSession && onEndSession());
   }
 
   function remove() {
@@ -45,7 +52,7 @@ window.SC = window.SC || {};
     }
   }
 
-  // state: "inactive" | "armed" | "listening" | "recording" | "analyzing"
+  // state: "inactive" | "priming" | "armed" | "listening" | "recording" | "analyzing" | "ending"
   function setState(state, extra) {
     ensureMounted();
     dotEl.className = "sc-dot";
@@ -54,6 +61,9 @@ window.SC = window.SC || {};
 
     if (state === "inactive") {
       statusTextEl.textContent = "Inactive";
+    } else if (state === "priming") {
+      dotEl.classList.add("busy");
+      statusTextEl.textContent = "Setting up interview context...";
     } else if (state === "armed") {
       dotEl.classList.add("armed");
       statusTextEl.textContent = "Waiting for a question";
@@ -68,7 +78,15 @@ window.SC = window.SC || {};
     } else if (state === "analyzing") {
       dotEl.classList.add("busy");
       statusTextEl.textContent = extra || "Analyzing...";
+    } else if (state === "ending") {
+      dotEl.classList.add("busy");
+      statusTextEl.textContent = "Requesting session review...";
     }
+  }
+
+  function setTurnCount(n) {
+    ensureMounted();
+    turnCountEl.textContent = n > 0 ? `${n} turn${n === 1 ? "" : "s"}` : "";
   }
 
   function setQuestion(text) {
@@ -141,10 +159,13 @@ window.SC = window.SC || {};
     scoreEl.innerHTML = `<span style="color:#e5484d;">${message}</span>`;
   }
 
-  function setManualHandlers(startFn, stopFn) {
+  function setManualHandlers(startFn, stopFn, endFn) {
     onManualStart = startFn;
     onManualStop = stopFn;
+    onEndSession = endFn;
   }
 
-  window.SC.overlay = { ensureMounted, remove, setState, setQuestion, setScore, setError, setManualHandlers };
+  window.SC.overlay = {
+    ensureMounted, remove, setState, setQuestion, setScore, setError, setManualHandlers, setTurnCount,
+  };
 })();

@@ -15,6 +15,7 @@
   "background": {
     "service_worker": "background.js"
   },
+  "options_page": "options/options.html",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "https://claude.ai/*",
@@ -31,6 +32,8 @@
         "content/recorder.js",
         "content/analysis-client.js",
         "content/injector.js",
+        "content/config.js",
+        "content/session.js",
         "content/overlay.js",
         "content/main.js"
       ],
@@ -45,6 +48,8 @@
         "content/recorder.js",
         "content/analysis-client.js",
         "content/injector.js",
+        "content/config.js",
+        "content/session.js",
         "content/overlay.js",
         "content/main.js"
       ],

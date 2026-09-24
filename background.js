@@ -29,6 +29,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "sc-self-deactivated" && sender.tab) {
+    // The content script ended its own session (overlay's "End Session"
+    // button) — keep the popup/badge state in sync without it round-tripping.
+    const tabId = sender.tab.id;
+    armedTabs.delete(tabId);
+    setBadge(tabId, false);
+    return;
+  }
+
   if (message.type === "sc-status-update" && sender.tab) {
     // Forwarded to the popup if it's currently open and listening; the
     // popup queries state directly on open instead, so this is best-effort

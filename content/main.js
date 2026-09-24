@@ -1,6 +1,7 @@
 // main.js — wires the engine together for the current tab. Loaded last by
 // manifest.json so window.SC.{activePlatform, VAD, Recorder, overlay,
-// analyzeRecording, buildReviewPrompt, injectAndSend} are all already set.
+// loadSettings, buildContextPrompt, buildFinalReviewPrompt, analyzeRecording,
+// buildReviewPrompt, injectAndSend} are all already set.
 (function () {
   const SC = window.SC;
   if (!SC || !SC.activePlatform) {
@@ -13,11 +14,16 @@
   let vad = null;
   let recorder = null;
   let stopWatchingMessages = null;
+  let settings = null;
+  let currentQuestion = "";
+  let sessionTurns = []; // [{questionText, report}] — built up for the end-of-session review
   // phase: "idle" (armed, no question yet) | "listening" (question shown, VAD
-  // armed, waiting for the user to start talking) | "recording" | "analyzing".
-  // Each transition is gated by phase, not a single busy flag — onSpeechStart
-  // and onSpeechEnd need different gates (only fire in "listening" and
-  // "recording" respectively), which a single boolean can't express.
+  // armed, waiting for the user to start talking) | "recording" | "analyzing"
+  // | "priming" (injecting the ground-rules prompt at session start) |
+  // "ending" (injecting the final review prompt). Each transition is gated
+  // by phase, not a single busy flag — onSpeechStart and onSpeechEnd need
+  // different gates (only fire in "listening" and "recording" respectively),
+  // which a single boolean can't express.
   let phase = "idle";
 
   async function activate() {
@@ -34,16 +40,21 @@
       return;
     }
 
+    settings = await SC.loadSettings();
     active = true;
-    phase = "idle";
+    phase = "priming";
+    currentQuestion = "";
+    sessionTurns = [];
     recorder = new SC.Recorder(stream);
-    vad = new SC.VAD(stream);
+    vad = new SC.VAD(stream, { stopSilenceSec: settings.silenceSec });
 
     SC.overlay.ensureMounted();
-    SC.overlay.setState("armed");
+    SC.overlay.setState("priming");
+    SC.overlay.setTurnCount(0);
     SC.overlay.setManualHandlers(
       () => startRecording("manual"),
-      () => stopRecordingAndReview("manual")
+      () => stopRecordingAndReview("manual"),
+      () => endSession("manual")
     );
 
     vad.onSpeechStart = () => {
@@ -55,13 +66,27 @@
       stopRecordingAndReview("vad");
     };
 
+    // Set up question-watching before injecting the context prompt, so the
+    // AI's first reply (the first interview question, per the prompt's last
+    // line) is caught rather than raced.
     stopWatchingMessages = SC.activePlatform.onNewAssistantMessage((questionText) => {
       if (phase !== "idle") return;
+      currentQuestion = questionText;
       SC.overlay.setQuestion(questionText);
       SC.overlay.setState("listening");
       phase = "listening";
       vad.start();
     });
+
+    try {
+      await SC.injectAndSend(SC.buildContextPrompt(settings));
+      phase = "idle";
+      SC.overlay.setState("armed");
+    } catch (e) {
+      SC.overlay.setError(e.message || "Couldn't set up the interview context.");
+      phase = "idle";
+      SC.overlay.setState("armed");
+    }
   }
 
   function deactivate() {
@@ -102,6 +127,8 @@
         SC.overlay.setState("analyzing", stage);
       });
       SC.overlay.setScore(report);
+      sessionTurns.push({ questionText: currentQuestion, report });
+      SC.overlay.setTurnCount(sessionTurns.length);
       const prompt = SC.buildReviewPrompt(report);
       await SC.injectAndSend(prompt);
       SC.overlay.setState("armed");
@@ -114,14 +141,43 @@
     }
   }
 
+  // Injects the final aggregate-review prompt (if any answers were given
+  // this session), then tears everything down. Triggered either by the
+  // overlay's "End Session" button or by deactivating from the popup.
+  async function endSession(source) {
+    if (!active) return;
+    const turns = sessionTurns;
+    phase = "ending";
+    if (vad) vad.stop();
+    if (recorder && recorder.isRecording()) {
+      try {
+        await recorder.stop();
+      } catch (_) {}
+    }
+
+    if (turns.length > 0) {
+      SC.overlay.setState("ending");
+      try {
+        await SC.injectAndSend(SC.buildFinalReviewPrompt(turns));
+      } catch (e) {
+        SC.overlay.setError(e.message || "Couldn't request the session review.");
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+
+    deactivate();
+    try {
+      chrome.runtime.sendMessage({ type: "sc-self-deactivated" });
+    } catch (_) {}
+  }
+
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (msg.type === "sc-activate") {
       activate().then(() => sendResponse({ ok: true }));
       return true;
     }
     if (msg.type === "sc-deactivate") {
-      deactivate();
-      sendResponse({ ok: true });
+      endSession("popup").then(() => sendResponse({ ok: true }));
       return true;
     }
   });

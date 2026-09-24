@@ -15,28 +15,40 @@ combined content + delivery review.
 ## How it works
 
 ```text
-1. You start a voice-mode chat on Claude.ai/ChatGPT and tell it (in your
-   own words) to interview you on some topic.
-2. Click the extension icon → "Activate for this tab". Mic permission
-   prompts once.
-3. A new AI question appears in the chat → overlay arms voice detection.
+1. (Optional, recommended) Click the extension icon → "CV / JD / question
+   settings" and fill in your CV (upload a .pdf/.docx or paste text), the
+   job description, how many seconds of silence counts as "done answering"
+   (N, 1-10), and which question types to include (technical, CV-based,
+   behavioral). Saved locally, reused every session.
+2. Open a voice-mode chat on Claude.ai/ChatGPT, click the extension icon →
+   "Activate for this tab". Mic permission prompts once.
+3. The plugin automatically types and sends a "ground rules" prompt: ask
+   one question at a time, wait for the delivery-analysis message before
+   reviewing, cover the selected question types, use the CV/JD as context.
+   The AI's reply to that prompt is your first question.
 4. You start speaking → recording starts automatically.
-   You stop speaking (silence) → recording stops automatically.
+   You go silent for N seconds → recording stops automatically.
 5. The clip is sent to speech-coach's /api/analyze for scoring.
 6. A short "here's how that sounded" prompt is typed into the chat and
-   sent for you.
-7. The AI's reply reviews both correctness AND delivery. Repeat from 3.
+   sent for you. The AI's reply reviews both correctness AND delivery.
+   Repeat from 3 for the next question.
+7. Click the overlay's "End Session & Get Review" button (or deactivate
+   from the popup) → the plugin injects one final prompt asking for an
+   overall session review (correctness + recurring delivery patterns +
+   recommendations) across every question answered, then shuts down.
 ```
 
-No second AI model call happens in the extension itself — the review
-text comes from whichever AI you're already talking to, driven by the
-injected measurements.
+No second AI model call happens in the extension itself — every review
+(per-question and the final session review) comes from whichever AI
+you're already talking to, driven by the injected measurements.
 
 ## Install (unpacked, for now)
 
 1. `chrome://extensions` → enable **Developer mode**.
 2. **Load unpacked** → select this folder.
-3. Open Claude.ai or ChatGPT, start a voice-mode conversation, click the
+3. (Optional) Click the extension icon → "CV / JD / question settings" to
+   configure your CV/JD/silence-threshold/question types before starting.
+4. Open Claude.ai or ChatGPT, start a voice-mode conversation, click the
    extension icon and activate it for that tab.
 
 ## Manual override
@@ -66,3 +78,15 @@ Uses speech-coach's already-deployed, unauthenticated, CORS-open
 `POST https://speech-coach-rsme.onrender.com/api/analyze` for acoustic
 analysis. No separate backend, no API key, nothing to deploy for this
 extension itself.
+
+## Settings storage and CV/JD parsing
+
+Settings (CV text, JD text, silence threshold, question types) are saved
+in `chrome.storage.local` — local to your browser profile, never sent
+anywhere except embedded in the context prompt typed into the chat you
+activate the plugin on. CV `.pdf`/`.docx` upload is parsed client-side
+in the options page using vendored copies of
+[pdf.js](https://github.com/mozilla/pdf.js) and
+[mammoth.js](https://github.com/mwilliamson/mammoth.js) (`vendor/` —
+Manifest V3 disallows loading such libraries from a CDN, so they're
+bundled locally). Legacy `.doc` isn't supported; paste the text instead.

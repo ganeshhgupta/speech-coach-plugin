@@ -1,13 +1,13 @@
 #sc-overlay {
   position: fixed; top: 20px; right: 20px; bottom: 20px; z-index: 2147483647;
   width: 420px; background: #0f1115; color: #e6e8ee; border: 1px solid #2a2f3a;
-  border-radius: 10px; padding: 14px; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
-  font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  border-radius: 10px; padding: 16px; font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.4);
   display: flex; flex-direction: column; overflow-y: auto;
 }
 #sc-overlay h2 {
-  font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
-  margin: 0 0 8px;
+  font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
+  margin: 0 0 10px;
 }
 #sc-overlay .sc-status-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 #sc-overlay .sc-dot { width: 8px; height: 8px; border-radius: 50%; background: #9aa2b1; flex-shrink: 0; }
@@ -16,39 +16,39 @@
 #sc-overlay .sc-dot.busy { background: #f2b705; }
 @keyframes sc-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 #sc-overlay .sc-question {
-  font-size: 11px; color: #9aa2b1; margin-bottom: 10px; max-height: 60px; overflow-y: auto;
+  font-size: 14px; color: #9aa2b1; margin-bottom: 10px; max-height: 80px; overflow-y: auto;
   border-left: 2px solid #2a2f3a; padding-left: 8px;
 }
 #sc-overlay .sc-buttons { display: flex; gap: 6px; margin-bottom: 8px; }
 #sc-overlay button {
   flex: 1; background: #171a21; color: #e6e8ee; border: 1px solid #2a2f3a; border-radius: 6px;
-  padding: 6px 8px; font-size: 11px; cursor: pointer;
+  padding: 8px 10px; font-size: 14px; cursor: pointer;
 }
 #sc-overlay button:disabled { opacity: .5; cursor: default; }
 #sc-overlay button.sc-stop { border-color: #e5484d; color: #e5484d; }
 #sc-overlay button.sc-end { border-color: #5b8def; color: #5b8def; }
-#sc-overlay h2 #sc-turn-count { text-transform: none; letter-spacing: 0; color: #6b7280; font-size: 11px; }
+#sc-overlay h2 #sc-turn-count { text-transform: none; letter-spacing: 0; color: #6b7280; font-size: 13px; }
 
 #sc-overlay .sc-metrics-title {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
-  margin: 10px 0 6px; border-top: 1px solid #2a2f3a; padding-top: 10px;
+  font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
+  margin: 12px 0 8px; border-top: 1px solid #2a2f3a; padding-top: 12px;
 }
 #sc-overlay .sc-metric-row {
-  display: flex; justify-content: space-between; gap: 8px; padding: 3px 0;
-  font-size: 11.5px; color: #c4c9d4;
+  display: flex; justify-content: space-between; gap: 8px; padding: 4px 0;
+  font-size: 15px; color: #c4c9d4;
 }
 #sc-overlay .sc-metric-row .sc-metric-val { color: #e6e8ee; font-weight: 600; }
 #sc-overlay .sc-metric-row.sc-metric-flag .sc-metric-val { color: #f2b705; }
 #sc-overlay .sc-findings-title {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
-  margin: 10px 0 6px;
+  font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #9aa2b1;
+  margin: 12px 0 8px;
 }
 #sc-overlay .sc-finding {
-  font-size: 11px; line-height: 1.5; margin-bottom: 6px; padding-left: 8px;
+  font-size: 14px; line-height: 1.5; margin-bottom: 8px; padding-left: 8px;
   border-left: 2px solid #2a2f3a;
 }
 #sc-overlay .sc-finding.sc-sev-flag { border-left-color: #e5484d; }
 #sc-overlay .sc-finding.sc-sev-watch { border-left-color: #f2b705; }
 #sc-overlay .sc-finding.sc-sev-info { border-left-color: #34d399; }
-#sc-overlay .sc-finding .sc-finding-cat { color: #9aa2b1; text-transform: uppercase; font-size: 9.5px; letter-spacing: .03em; }
-#sc-overlay .sc-empty { font-size: 11px; color: #6b7280; font-style: italic; }
+#sc-overlay .sc-finding .sc-finding-cat { color: #9aa2b1; text-transform: uppercase; font-size: 12px; letter-spacing: .03em; }
+#sc-overlay .sc-empty { font-size: 14px; color: #6b7280; font-style: italic; }

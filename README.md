@@ -15,8 +15,8 @@ combined content + delivery review.
 ## How it works
 
 ```text
-1. (Optional, recommended) Click the extension icon → "CV / JD / question
-   settings" and fill in your CV (upload a .pdf/.docx or paste text), the
+1. (Optional, recommended) Click the extension icon and expand "Interview
+   settings" to fill in your CV (upload a .pdf/.docx or paste text), the
    job description, how many seconds of silence counts as "done answering"
    (N, 1-10), and which question types to include (technical, CV-based,
    behavioral). Saved locally, reused every session.
@@ -46,7 +46,7 @@ you're already talking to, driven by the injected measurements.
 
 1. `chrome://extensions` → enable **Developer mode**.
 2. **Load unpacked** → select this folder.
-3. (Optional) Click the extension icon → "CV / JD / question settings" to
+3. (Optional) Click the extension icon → expand "Interview settings" to
    configure your CV/JD/silence-threshold/question types before starting.
 4. Open Claude.ai or ChatGPT, start a voice-mode conversation, click the
    extension icon and activate it for that tab.
@@ -81,11 +81,12 @@ extension itself.
 
 ## Settings storage and CV/JD parsing
 
-Settings (CV text, JD text, silence threshold, question types) are saved
-in `chrome.storage.local` — local to your browser profile, never sent
+Settings (CV text, JD text, silence threshold, question types) live in the
+popup's "Interview settings" section (not a separate tab) and are saved to
+`chrome.storage.local` — local to your browser profile, never sent
 anywhere except embedded in the context prompt typed into the chat you
-activate the plugin on. CV `.pdf`/`.docx` upload is parsed client-side
-in the options page using vendored copies of
+activate the plugin on. CV `.pdf`/`.docx` upload is parsed client-side in
+the popup using vendored copies of
 [pdf.js](https://github.com/mozilla/pdf.js) and
 [mammoth.js](https://github.com/mwilliamson/mammoth.js) (`vendor/` —
 Manifest V3 disallows loading such libraries from a CDN, so they're

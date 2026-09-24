@@ -58,10 +58,12 @@
     );
 
     vad.onSpeechStart = () => {
+      console.debug("[speech-coach] VAD speech start, phase=", phase);
       if (phase !== "listening") return;
       startRecording("vad");
     };
     vad.onSpeechEnd = () => {
+      console.debug("[speech-coach] VAD speech end, phase=", phase);
       if (phase !== "recording") return;
       stopRecordingAndReview("vad");
     };
@@ -70,22 +72,26 @@
     // AI's first reply (the first interview question, per the prompt's last
     // line) is caught rather than raced.
     stopWatchingMessages = SC.activePlatform.onNewAssistantMessage((questionText) => {
+      console.debug("[speech-coach] onNewAssistantMessage fired, phase=", phase, "text=", questionText.slice(0, 80));
       if (phase !== "idle") return;
       currentQuestion = questionText;
       SC.overlay.setQuestion(questionText);
       SC.overlay.setState("listening");
       phase = "listening";
       vad.start();
+      console.debug("[speech-coach] armed for listening, VAD started");
     });
 
     try {
       await SC.injectAndSend(SC.buildContextPrompt(settings));
       phase = "idle";
       SC.overlay.setState("armed");
+      console.debug("[speech-coach] context prompt sent, armed and watching for the first question");
     } catch (e) {
       SC.overlay.setError(e.message || "Couldn't set up the interview context.");
       phase = "idle";
       SC.overlay.setState("armed");
+      console.error("[speech-coach] context prompt injection failed:", e);
     }
   }
 

@@ -15,7 +15,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "options/options.html",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "https://claude.ai/*",

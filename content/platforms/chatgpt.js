@@ -49,26 +49,33 @@ window.SC = window.SC || {};
   }
 
   function onNewAssistantMessage(callback) {
-    // Seed with whatever's already the latest message so a benign DOM
-    // mutation right after setup can't replay a pre-existing message as "new".
-    const existing = getLatestAssistantMessageEl();
-    let lastSeenText = existing ? existing.innerText.trim() : "";
+    // Identity-based, not text-based: "new" means a different DOM element
+    // than the one already handled, never a text comparison. Text-equality
+    // seeding is fragile (a reused/continued chat thread, or two questions
+    // that happen to share wording, can silently poison a text-based check
+    // forever). reportedEl starts as whatever's already latest at setup, so
+    // a benign mutation right after activation can't replay it as "new".
+    let reportedEl = getLatestAssistantMessageEl();
+    let pendingEl = null;
     let settleTimer = null;
 
     const observer = new MutationObserver(() => {
       const el = getLatestAssistantMessageEl();
-      if (!el) return;
+      if (!el || el === reportedEl) return;
+
+      if (el !== pendingEl) pendingEl = el;
       const text = el.innerText.trim();
-      if (!text || text === lastSeenText) return;
+      if (!text) return;
 
       clearTimeout(settleTimer);
       settleTimer = setTimeout(() => {
         const finalEl = getLatestAssistantMessageEl();
-        const finalText = finalEl ? finalEl.innerText.trim() : "";
-        if (finalText && finalText !== lastSeenText) {
-          lastSeenText = finalText;
-          callback(finalText);
-        }
+        if (finalEl !== pendingEl) return; // a newer element showed up meanwhile; its own timer will handle it
+        const finalText = finalEl.innerText.trim();
+        if (!finalText) return;
+        reportedEl = finalEl;
+        console.debug("[speech-coach] new assistant message detected:", finalText.slice(0, 80));
+        callback(finalText);
       }, SETTLE_DEBOUNCE_MS);
     });
 

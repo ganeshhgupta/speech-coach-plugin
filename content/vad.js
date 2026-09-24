@@ -60,6 +60,7 @@ window.SC = window.SC || {};
           const avg = this.calibrationSamples.reduce((a, b) => a + b, 0) / this.calibrationSamples.length;
           this.threshold = Math.max(MIN_THRESHOLD, avg * THRESHOLD_MULTIPLIER);
           this.calibrating = false;
+          console.debug("[speech-coach] VAD calibrated: noise floor=", avg.toFixed(5), "threshold=", this.threshold.toFixed(5));
         }
         this.rafId = requestAnimationFrame(() => this._tick());
         return;
